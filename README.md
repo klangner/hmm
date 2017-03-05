@@ -10,7 +10,9 @@ The folder [examples](https://github.com/klangner/hmm/tree/master/examples) cont
 
 ## Features
    
-  * [ ] Simple model
+  * [ ] Inference
+  * [ ] Most probable configuration
+  * [ ] Parameter learning
 
   
 # License
