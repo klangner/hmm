@@ -5,14 +5,11 @@
 **hmm is an early-stage open-source project**. It means that API can change at any time.
 If you think that this library can help you, then let me know. We can discuss future direction and try to stabilize the API.
 
-The folder [examples](https://github.com/klangner/hmm/tree/master/examples) contains demo programs which shows how to use this library.
 
 
 ## Features
    
-  * [ ] Inference
-  * [ ] Most probable configuration
-  * [ ] Parameter learning
+  * [ ] Viterbi MAP estimation
 
   
 # License

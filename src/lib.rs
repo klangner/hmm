@@ -1,4 +1,4 @@
 
 extern crate ndarray;
 
-pub mod pgm;
+pub mod models;
