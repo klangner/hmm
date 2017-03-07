@@ -24,11 +24,31 @@ pub struct HiddenMarkov {
 
 impl HiddenMarkov {
     /// Create a new Hidden Markov Model
-    fn new(initials: Vec<Probability>, transitions: Vec<Vec<Probability>>,
-           observation_model: Vec<Vec<Probability>>) -> Option<HiddenMarkov>
+    /// Please note that:
+    ///   * initials should have more then 1 state. Its value should be in range [0, 1] and sum to 1.
+    ///   * transitions should have exactly #state x #state elements
+    fn new(initials: Vec<Probability>, transitions: Vec<Probability>,
+           observation_model: Vec<Probability>) -> Option<HiddenMarkov>
     {
+        // Check if initials is correct vector
         let num_states = initials.len();
-        None
+        // We need at least 2 states
+        if num_states < 2 || initials.iter().sum::<f64>() != 1.0 { return None; }
+        // Transition needs num_state^2 elements
+        let ts = Array::from_shape_vec((num_states, num_states), transitions).ok();
+        // observation is matrix of size #num_states x #num_outcomes
+        // And it should be bigger then 1
+        let num_outcomes = observation_model.len() / num_states;
+        if num_outcomes < 2 { return None; }
+        let obs = Array::from_shape_vec((num_states, num_outcomes), observation_model).ok();
+
+        ts.and_then(|t| obs.map(|b| {
+            HiddenMarkov {
+                init_states: Array::from_vec(initials),
+                state_transitions: Array::from_shape_vec((2, 2), vec![5., 1., 1., 5.]).unwrap(),
+                observation_model: Array::from_shape_vec((2, 2), vec![5., 1., 1., 5.]).unwrap(),
+            }
+        }))
     }
 
     /// Viterbi algorithm for estimating MAP (Maximum a posteriori)
@@ -48,17 +68,35 @@ mod tests {
     #[test]
     fn test_new() {
         let initials: Vec<f64> = vec![0.5, 0.5];
-        let st = vec![vec![0.75, 0.25], vec![0.25, 0.75]];
-        let obs = vec![vec![0.5, 0.5], vec![0.25, 0.75]];
-        let m = HiddenMarkov::new(initials, st, obs);
-        assert!(m.is_some());
+        let st = vec![0.75, 0.25, 0.25, 0.75];
+        let obs = vec![0.5, 0.5, 0.25, 0.75];
+
+        assert!(HiddenMarkov::new(initials, st, obs).is_some());
+    }
+
+    #[test]
+    fn test_new_none1() {
+        let initials: Vec<f64> = vec![0.5, 0.7];
+        let st = vec![0.75, 0.25, 0.25, 0.75];
+        let obs = vec![0.5, 0.5, 0.25, 0.75];
+
+        assert!(HiddenMarkov::new(initials, st, obs).is_none());
+    }
+
+    #[test]
+    fn test_new_none2() {
+        let initials: Vec<f64> = vec![0.5, 0.5];
+        let st = vec![0.75, 0.25, 0.25];
+        let obs = vec![0.5, 0.5, 0.25, 0.75];
+
+        assert!(HiddenMarkov::new(initials, st, obs).is_none());
     }
 
     #[test]
     fn test_viterbi() {
         let initials: Vec<f64> = vec![0.5, 0.5];
-        let st = vec![vec![0.75, 0.25], vec![0.25, 0.75]];
-        let obs = vec![vec![0.5, 0.5], vec![0.25, 0.75]];
+        let st = vec![0.75, 0.25, 0.25, 0.75];
+        let obs = vec![0.5, 0.5, 0.25, 0.75];
         let hmm = HiddenMarkov::new(initials, st, obs).unwrap();
         let map = hmm.viterbi(vec![0, 0, 1, 1, 1]);
 //        assert!(map == vec![0, 0, 1, 1, 1])
