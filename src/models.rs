@@ -6,6 +6,7 @@ use ndarray::{Array, Ix1, Ix2};
 
 type Probability = f64;
 type LabelId = usize;
+type StateId = usize;
 type Matrix1 = Array<f64, Ix1>;
 type Matrix2 = Array<f64, Ix2>;
 
@@ -52,7 +53,7 @@ impl HiddenMarkov {
     }
 
     /// Viterbi algorithm for estimating MAP (Maximum a posteriori)
-    fn viterbi(&self, observations: Vec<LabelId>) -> Vec<Probability> {
+    fn viterbi(&self, observations: Vec<LabelId>) -> Vec<StateId> {
         vec![]
     }
 }
@@ -99,7 +100,7 @@ mod tests {
         let obs = vec![0.5, 0.5, 0.25, 0.75];
         let hmm = HiddenMarkov::new(initials, st, obs).unwrap();
         let map = hmm.viterbi(vec![0, 0, 1, 1, 1]);
-//        assert!(map == vec![0, 0, 1, 1, 1])
+        assert!(map == vec![0, 0, 1, 1, 1])
     }
 
 }
