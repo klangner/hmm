@@ -10,4 +10,3 @@ homepage = "https://github.com/klangner/hmm"
 documentation = "https://docs.rs/hmm"
 
 [dependencies]
-ndarray = "0.7.3"
