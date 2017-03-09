@@ -1,0 +1,8 @@
+[package]
+name = "hmm-coins"
+version = "0.1.0"
+authors = ["Krzysztof Langner <klangner@gmail.com>"]
+
+
+[dependencies]
+hmm = { path = "../.." }

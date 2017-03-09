@@ -1,6 +1,6 @@
 [package]
 name = "hmm"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Krzysztof Langner <klangner@gmail.com>"]
 description = "Hidden Markov Model"
 keywords = ["hidden-markow-model", "hmm", "pgm"]
