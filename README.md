@@ -26,7 +26,7 @@ First time we select coin with probability of 1/2
 
 Using this library we can answer the following question:
  
-Given the observation 'H H T T T' which coins were used during each toss?
+Given the observations 'H H T T T' which coins were used during each toss?
 
 
 Lest build HMM model and check the answer:
