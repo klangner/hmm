@@ -4,8 +4,10 @@ use std::cmp;
 
 
 /// Vector is just Rust Vec
-//#[derive(Debug, PartialEq)]
-pub type Vector = Vec<f64>;
+#[derive(Debug, PartialEq)]
+pub struct Vector {
+    data: Vec<f64>
+}
 
 /// 2 dimensional matrix
 #[derive(Debug, PartialEq)]
@@ -14,6 +16,46 @@ pub struct Matrix {
     cols: usize,
     data: Vec<Vec<f64>>
 }
+
+
+impl Vector {
+
+    /// Vector constructor
+    pub fn new(v: Vec<f64>) -> Vector {
+        Vector { data: v }
+    }
+
+    /// Vector length
+    pub fn len(&self) -> usize { self.data.len() }
+
+    /// Item at given index
+    pub fn get(&self, i: usize) -> f64 { self.data[i] }
+
+    /// Positive matrix has all its entries >= 0
+    pub fn is_positive(&self) -> bool {
+        let has_neg = self.data.iter().any(|&item| item < 0.);
+        !has_neg
+    }
+
+    /// Ad 2 vectors. If the have different size, they output vector will have minimal size
+    pub fn add_vector(&self, u: &Vector) -> Vector {
+        let data = self.data.iter().zip(&u.data).map(|(x, y)| x + y).collect();
+        Vector::new(data)
+    }
+
+    /// Ad scalar to the vector.
+    pub fn add_scalar(&self, u: &Vector) -> Vector {
+        let data = self.data.iter().zip(&u.data).map(|(x,y)| x+y).collect();
+        Vector::new(data)
+    }
+
+    /// Apply -log2 for each element
+    pub fn minus_log(&self) -> Vector {
+        Vector::new(self.data.iter().map(|i| -i.log2()).collect())
+    }
+
+}
+
 
 impl Matrix {
     /// Create new matrix
@@ -47,29 +89,25 @@ impl Matrix {
     pub fn column(&self, index: usize) -> Option<Vector> {
         // Validate input
         if index >= self.cols { return None }
-
-        Some(self.data.iter().map(|r| r[index]).collect())
+        let data = self.data.iter().map(|r| r[index]).collect();
+        Some(Vector::new(data))
     }
 
     /// Add vector to each column
     pub fn add_to_columns(&self, v: &Vector) -> Matrix {
         let n = cmp::min(self.rows, v.len());
+        let mut data = self.data.clone();
+
+        for i in 0..n {
+            for j in 0..self.cols {
+                data[i][j] += v.get(i)
+            }
+        }
         Matrix { rows: self.rows,
                  cols: self.cols,
-                 data: self.data.iter().map(|r| r.iter().map(|i| -i).collect()).collect()}
+                 data: data}
     }
 }
-
-
-/// Ad 2 vectors. If the have different size, they output vector will have minimal size
-pub fn add_vectors(v: &Vector, u: &Vector) -> Vector {
-    v.iter().zip(u).map(|(x,y)| x+y).collect()
-}
-
-/// Ad scalar to the vector.
-//pub fn add_scalar(v: &Vector, u: &Vector) -> Vector {
-//    v.iter().zip(u).map(|(x,y)| x+y).collect()
-//}
 
 
 
@@ -118,21 +156,23 @@ mod tests {
     fn test_get_column() {
         let mat = Matrix::new(vec![vec![1., 2.],
                                    vec![3., 4.]]).unwrap();
-        assert!(mat.column(1) == Some(vec![2., 4.]));
+        let expected = Vector::new(vec![2., 4.]);
+        assert!(mat.column(1) == Some(expected));
     }
 
     #[test]
     fn test_add_vectors() {
-        let v = vec![1., 2.];
-        let u = vec![3., 4.];
-        assert!(add_vectors(&v, &u) == vec![4., 6.]);
+        let v = Vector::new(vec![1., 2.]);
+        let u = Vector::new(vec![3., 4.]);
+        let expected = Vector::new(vec![4., 6.]);
+        assert!(v.add_vector(&u) == expected);
     }
 
     #[test]
     fn test_add_to_column() {
         let mat = Matrix::new(vec![vec![1., 2.],
                                    vec![3., 4.]]).unwrap();
-        let v = vec![3., 4.];
+        let v = Vector::new(vec![3., 4.]);
         let expected = Matrix::new(vec![vec![4., 5.],
                                         vec![7., 8.]]).unwrap();
         assert!(mat.add_to_columns(&v) == expected);

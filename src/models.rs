@@ -5,7 +5,7 @@
 // instead of multiplication.  And since we are interested in probabilities in range [0, 1]
 // We will operate on -log. So instead of max probability we will minimize log probabilities.
 
-use matrices::{Vector, Matrix, add_vectors};
+use matrices::{Vector, Matrix};
 
 
 type LabelId = usize;
@@ -46,13 +46,13 @@ impl HiddenMarkov {
         let num_states = initials.len();
         // Validate parameters
         if num_states < 2 { return None }
-        if initials.iter().any(|&x| x < 0.) { return None; }
+        if !initials.is_positive() { return None; }
         if !transitions.is_positive() { return None; }
         if !observation_model.is_positive() { return None; }
 
         // We need -log values.
         let num_outcomes = observation_model.cols();
-        let initials_log: Vector = initials.iter().map(|x| -x.log2()).collect();
+        let initials_log: Vector = initials.minus_log();
         let tx_log: Matrix = transitions.minus_log();
         let obs_log: Matrix = observation_model.minus_log();
 
@@ -100,7 +100,7 @@ impl HiddenMarkov {
         if observations.len() == 0 {return vec![]}
         if observations.iter().any(|&x| x >= self.observation_count) { return vec![]; }
 
-        let phi = add_vectors(&self.init_states, &self.state_from_observation(observations[0]));
+        let phi = self.init_states.add_vector(&self.state_from_observation(observations[0]));
         println!("ϕ_1 = {:?}", phi);
         let m_1_2 = self.msg_table(&phi);
         println!("msg_1_2 = {:?}", m_1_2);
@@ -132,7 +132,7 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let initials: Vec<f64> = vec![0.5, 0.5];
+        let initials: Vector = Vector::new(vec![0.5, 0.5]);
         let st = Matrix::new(vec![ vec![0.75, 0.25],
                                    vec![0.25, 0.75]]).unwrap();
         let obs = Matrix::new(vec![ vec![0.5, 0.5],
@@ -143,7 +143,7 @@ mod tests {
 
     #[test]
     fn test_new_none1() {
-        let initials: Vec<f64> = vec![0.5, -0.5];
+        let initials: Vector = Vector::new(vec![0.5, -0.5]);
         let st = Matrix::new(vec![ vec![0.75, 0.25],
                                    vec![0.25, 0.75]]).unwrap();
         let obs = Matrix::new(vec![ vec![0.5, 0.5],
@@ -154,7 +154,7 @@ mod tests {
 
     #[test]
     fn test_map_estimation() {
-        let initials: Vec<f64> = vec![0.5, 0.5];
+        let initials: Vector = Vector::new(vec![0.5, 0.5]);
         let st = Matrix::new(vec![ vec![0.75, 0.25],
                                    vec![0.25, 0.75]]).unwrap();
         let obs = Matrix::new(vec![ vec![0.5, 0.5],
