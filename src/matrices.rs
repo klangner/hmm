@@ -4,7 +4,7 @@ use std::cmp;
 
 
 /// Vector is just Rust Vec
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Vector {
     data: Vec<f64>
 }
@@ -54,6 +54,19 @@ impl Vector {
         Vector::new(self.data.iter().map(|i| -i.log2()).collect())
     }
 
+    /// get index with minimal value
+    pub fn argmin(&self) -> usize {
+        let mut min_index = 0;
+        let mut min_value = self.data[0];
+
+        for (i,v) in self.data.iter().enumerate() {
+            if v < &min_value {
+                min_value = v.clone();
+                min_index = i.clone();
+            }
+        }
+        min_index
+    }
 }
 
 
@@ -106,6 +119,33 @@ impl Matrix {
         Matrix { rows: self.rows,
                  cols: self.cols,
                  data: data}
+    }
+
+    /// Maximum by column
+    pub fn min_by_column(&self) -> Vector {
+        let mut v = vec![f64::MAX; self.cols];
+        for row in &self.data {
+            for (i, &item) in row.iter().enumerate() {
+                if item < v[i] { v[i] = item}
+            }
+        }
+        Vector::new(v)
+    }
+
+    /// Argmax by column
+    pub fn argmin_by_column(&self) -> Vec<usize> {
+        let mut v = vec![f64::MAX; self.cols];
+        let mut args = vec![0; self.cols];
+
+        for (i, ref row) in self.data.iter().enumerate() {
+            for (j, &item) in row.iter().enumerate() {
+                if item < v[j] {
+                    v[j] = item;
+                    args[j] = i;
+                }
+            }
+        }
+        args
     }
 }
 
@@ -176,6 +216,28 @@ mod tests {
         let expected = Matrix::new(vec![vec![4., 5.],
                                         vec![7., 8.]]).unwrap();
         assert!(mat.add_to_columns(&v) == expected);
+    }
+
+    #[test]
+    fn test_min_by_column() {
+        let mat = Matrix::new(vec![vec![1., 4.],
+                                   vec![3., 2.]]).unwrap();
+        let expected = Vector::new(vec![1., 2.]);
+        assert!(mat.min_by_column() == expected);
+    }
+
+    #[test]
+    fn test_argmin_by_column() {
+        let mat = Matrix::new(vec![vec![1., 4.],
+                                   vec![3., 2.]]).unwrap();
+        let expected = vec![0, 1];
+        assert!(mat.argmin_by_column() == expected);
+    }
+
+    #[test]
+    fn test_argmin() {
+        let v = Vector::new(vec![1., 4., 0.34, 12.]);
+        assert!(v.argmin() == 2);
     }
 
 }

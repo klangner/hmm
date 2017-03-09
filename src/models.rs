@@ -19,7 +19,7 @@ pub struct HiddenMarkov {
     // Number of states
     state_count: usize,
     // Number of labels (different observation types)
-    observation_count: usize,
+    labels_count: usize,
     // Probability of starting states. Row Id == state id
     init_states: Vector,
     // Probability table of switching states
@@ -40,8 +40,8 @@ impl HiddenMarkov {
     ///   - initials - Initial probability for each state
     ///   - transition - Probability of changing state from x1 to x2 (x1 x x2)
     ///   - observation_matrix - Probability of generating outcome in each state (state x outcome)
-    fn from_vec(initials: Vector, transitions: Matrix,
-                observation_model: Matrix) -> Option<HiddenMarkov>
+    pub fn new(initials: Vector, transitions: Matrix,
+               observation_model: Matrix) -> Option<HiddenMarkov>
     {
         let num_states = initials.len();
         // Validate parameters
@@ -59,7 +59,7 @@ impl HiddenMarkov {
         Some(
             HiddenMarkov {
                 state_count: num_states,
-                observation_count: num_outcomes,
+                labels_count: num_outcomes,
                 init_states: initials_log,
                 state_transitions: tx_log,
                 observation_model: obs_log
@@ -67,6 +67,11 @@ impl HiddenMarkov {
         )
 
     }
+
+    pub fn num_states(&self) -> usize { self.state_count}
+
+    pub fn num_labels(&self) -> usize { self.labels_count }
+
 
     /// Calculate MAP (Maximum a posteriori) using Viterbi algorithm
     /// As a input provide list of observations and as a output this function will provide
@@ -97,15 +102,35 @@ impl HiddenMarkov {
     ///   * Each LabelId should be less then maximum number of observation in HMM model
     pub fn map_estimate(&self, observations: Vec<LabelId>) -> Vec<StateId> {
         // Validate input
-        if observations.len() == 0 {return vec![]}
-        if observations.iter().any(|&x| x >= self.observation_count) { return vec![]; }
+        let obs_len = observations.len();
+        if obs_len == 0 {return vec![]}
+        if observations.iter().any(|&x| x >= self.labels_count) { return vec![]; }
 
-        let phi = self.init_states.add_vector(&self.state_from_observation(observations[0]));
-        println!("ϕ_1 = {:?}", phi);
-        let m_1_2 = self.msg_table(&phi);
-        println!("msg_1_2 = {:?}", m_1_2);
-////        println!("t_2_1 = {:?}", m_1_2);
-        vec![3]
+        let mut last_msg: Vector = self.init_states.clone();
+        let mut tracebacks: Vec<Vec<StateId>> = Vec::with_capacity(obs_len);
+
+        for i in 0..observations.len() {
+            // Based on the last message calculate ϕ_i + last_msg
+            let phi = last_msg.add_vector(&self.state_from_observation(observations[i]));
+            // Add transition
+            let (msg, t) = self.next_msg_and_traceback(&phi);
+            println!("\nmsg_{} = {:?}", i+1, &msg);
+            println!("t_{} = {:?}", i+1, &t);
+            last_msg = msg;
+            tracebacks.push(t);
+        }
+
+        // Based on the last message select most probable end state
+        let mut states: Vec<StateId> = vec![0; obs_len];
+        let mut last_state = last_msg.argmin();
+        for i in (0..obs_len).rev() {
+            let state: StateId = tracebacks[i][last_state];
+            last_state = state;
+            states[i] = state;
+
+        }
+
+        states
     }
 
     // The probability of being in given state based on the observation.
@@ -114,11 +139,11 @@ impl HiddenMarkov {
         self.observation_model.column(obs).unwrap()
     }
 
-    // Calculate message table
-    // This table is build from probability distribution of being in given state
-    // and transition table. Since we are in -log, we need to add state dist to each column.
-    fn msg_table(&self, phi: &Vector) -> Matrix {
-        self.state_transitions.add_to_columns(phi)
+    /// Calculate message and traceback
+    /// Message is minimal value across columns, trace back is argmax from columns
+    fn next_msg_and_traceback(&self, phi: &Vector) -> (Vector, Vec<StateId>) {
+        let mat = self.state_transitions.add_to_columns(phi);
+        (mat.min_by_column(), mat.argmin_by_column())
     }
 }
 
@@ -138,7 +163,7 @@ mod tests {
         let obs = Matrix::new(vec![ vec![0.5, 0.5],
                                     vec![0.25, 0.75]]).unwrap();
 
-        assert!(HiddenMarkov::from_vec(initials, st, obs).is_some());
+        assert!(HiddenMarkov::new(initials, st, obs).is_some());
     }
 
     #[test]
@@ -149,7 +174,7 @@ mod tests {
         let obs = Matrix::new(vec![ vec![0.5, 0.5],
                                     vec![0.25, 0.75]]).unwrap();
 
-        assert!(HiddenMarkov::from_vec(initials, st, obs).is_none());
+        assert!(HiddenMarkov::new(initials, st, obs).is_none());
     }
 
     #[test]
@@ -159,7 +184,7 @@ mod tests {
                                    vec![0.25, 0.75]]).unwrap();
         let obs = Matrix::new(vec![ vec![0.5, 0.5],
                                     vec![0.25, 0.75]]).unwrap();
-        let hmm = HiddenMarkov::from_vec(initials, st, obs).unwrap();
+        let hmm = HiddenMarkov::new(initials, st, obs).unwrap();
         let estimate = hmm.map_estimate(vec![0, 0, 1, 1, 1]);
         println!("MAP estimate {:?}", estimate);
         assert!(estimate == vec![0, 0, 1, 1, 1])
