@@ -89,7 +89,7 @@ impl HiddenMarkov {
     ///
     /// Question: If we now get observation of H H T T T which coins were used during each toss?
     ///
-    /// Lest build HMM model for this example and check the anwser:
+    /// Lest build HMM model for this example and check the answer:
     ///
     /// let initials: Vec<f64> = vec![0.5, 0.5];
     /// let st = vec![0.75, 0.25, 0.25, 0.75];
@@ -114,8 +114,6 @@ impl HiddenMarkov {
             let phi = last_msg.add_vector(&self.state_from_observation(observations[i]));
             // Add transition
             let (msg, t) = self.next_msg_and_traceback(&phi);
-            println!("\nmsg_{} = {:?}", i+1, &msg);
-            println!("t_{} = {:?}", i+1, &t);
             last_msg = msg;
             tracebacks.push(t);
         }
@@ -186,7 +184,6 @@ mod tests {
                                     vec![0.25, 0.75]]).unwrap();
         let hmm = HiddenMarkov::new(initials, st, obs).unwrap();
         let estimate = hmm.map_estimate(vec![0, 0, 1, 1, 1]);
-        println!("MAP estimate {:?}", estimate);
         assert!(estimate == vec![0, 0, 1, 1, 1])
     }
 

@@ -11,6 +11,38 @@ If you think that this library can help you, then let me know. We can discuss fu
    
   * [x] Viterbi MAP estimation
 
+
+## Example
+
+Lets say that we have 2 coins:
+  * Fair which generates H (Head) and T (Tails) with probability of 1/2
+  * Biased - with probabilities H: 1/4, T: 3/4
+
+We also know that after each toss we can switch coin with the probability of
+  * Use the same coin: 3/4
+  * Switch coin: 1/4
+
+First time we select coin with probability of 1/2
+
+Question: If we now get observation of H H T T T which coins were used during each toss?
+
+Lest build HMM model for this example and check the answer:
+
+
+```rust
+let initials: Vector = Vector::new(vec![0.5, 0.5]);
+let st = Matrix::new(vec![ vec![0.75, 0.25],
+                           vec![0.25, 0.75]]).unwrap();
+let obs = Matrix::new(vec![ vec![0.5, 0.5],
+                            vec![0.25, 0.75]]).unwrap();
+// Build model                            
+let hmm = HiddenMarkov::new(initials, st, obs).unwrap();
+// Estimate state probability
+let estimate = hmm.map_estimate(vec![0, 0, 1, 1, 1]);
+assert!(estimate == vec![0, 0, 1, 1, 1])
+```
+ 
+
   
 # License
 
