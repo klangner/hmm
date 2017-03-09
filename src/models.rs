@@ -40,28 +40,37 @@ impl HiddenMarkov {
     ///   - initials - Initial probability for each state
     ///   - transition - Probability of changing state from x1 to x2 (x1 x x2)
     ///   - observation_matrix - Probability of generating outcome in each state (state x outcome)
-    pub fn new(initials: Vector, transitions: Matrix,
-               observation_model: Matrix) -> Option<HiddenMarkov>
+    pub fn new(initials: Vec<f64>, transitions: Vec<Vec<f64>>,
+               observation_model: Vec<Vec<f64>>) -> Option<HiddenMarkov>
     {
         let num_states = initials.len();
+        let is = Vector::new(initials);
+        let ts = Matrix::new(transitions);
+        let os = Matrix::new(observation_model);
+
+
         // Validate parameters
         if num_states < 2 { return None }
-        if !initials.is_positive() { return None; }
-        if !transitions.is_positive() { return None; }
-        if !observation_model.is_positive() { return None; }
+        if !is.is_positive() { return None }
+        if ts.is_none() { return None }
+        let trans = ts.unwrap();
+        if !trans.is_positive() { return None }
+        if os.is_none() { return None }
+        let obs = os.unwrap();
+        if !obs.is_positive() { return None }
 
         // We need -log values.
-        let num_outcomes = observation_model.cols();
-        let initials_log: Vector = initials.minus_log();
-        let tx_log: Matrix = transitions.minus_log();
-        let obs_log: Matrix = observation_model.minus_log();
+        let num_outcomes = obs.cols();
+        let is_log: Vector = is.minus_log();
+        let trans_log: Matrix = trans.minus_log();
+        let obs_log: Matrix = obs.minus_log();
 
         Some(
             HiddenMarkov {
                 state_count: num_states,
                 labels_count: num_outcomes,
-                init_states: initials_log,
-                state_transitions: tx_log,
+                init_states: is_log,
+                state_transitions: trans_log,
                 observation_model: obs_log
             }
         )
@@ -155,33 +164,33 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let initials: Vector = Vector::new(vec![0.5, 0.5]);
-        let st = Matrix::new(vec![ vec![0.75, 0.25],
-                                   vec![0.25, 0.75]]).unwrap();
-        let obs = Matrix::new(vec![ vec![0.5, 0.5],
-                                    vec![0.25, 0.75]]).unwrap();
+        let initials: Vec<f64> = vec![0.5, 0.5];
+        let st = vec![ vec![0.75, 0.25],
+                       vec![0.25, 0.75]];
+        let obs = vec![ vec![0.5, 0.5],
+                        vec![0.25, 0.75]];
 
         assert!(HiddenMarkov::new(initials, st, obs).is_some());
     }
 
     #[test]
     fn test_new_none1() {
-        let initials: Vector = Vector::new(vec![0.5, -0.5]);
-        let st = Matrix::new(vec![ vec![0.75, 0.25],
-                                   vec![0.25, 0.75]]).unwrap();
-        let obs = Matrix::new(vec![ vec![0.5, 0.5],
-                                    vec![0.25, 0.75]]).unwrap();
+        let initials: Vec<f64> = vec![0.5, -0.5];
+        let st = vec![ vec![0.75, 0.25],
+                       vec![0.25, 0.75]];
+        let obs = vec![ vec![0.5, 0.5],
+                        vec![0.25, 0.75]];
 
         assert!(HiddenMarkov::new(initials, st, obs).is_none());
     }
 
     #[test]
     fn test_map_estimation() {
-        let initials: Vector = Vector::new(vec![0.5, 0.5]);
-        let st = Matrix::new(vec![ vec![0.75, 0.25],
-                                   vec![0.25, 0.75]]).unwrap();
-        let obs = Matrix::new(vec![ vec![0.5, 0.5],
-                                    vec![0.25, 0.75]]).unwrap();
+        let initials: Vec<f64> = vec![0.5, 0.5];
+        let st = vec![ vec![0.75, 0.25],
+                       vec![0.25, 0.75]];
+        let obs = vec![ vec![0.5, 0.5],
+                        vec![0.25, 0.75]];
         let hmm = HiddenMarkov::new(initials, st, obs).unwrap();
         let estimate = hmm.map_estimate(vec![0, 0, 1, 1, 1]);
         assert!(estimate == vec![0, 0, 1, 1, 1])

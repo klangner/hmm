@@ -43,12 +43,6 @@ impl Vector {
         Vector::new(data)
     }
 
-    /// Ad scalar to the vector.
-    pub fn add_scalar(&self, u: &Vector) -> Vector {
-        let data = self.data.iter().zip(&u.data).map(|(x,y)| x+y).collect();
-        Vector::new(data)
-    }
-
     /// Apply -log2 for each element
     pub fn minus_log(&self) -> Vector {
         Vector::new(self.data.iter().map(|i| -i.log2()).collect())
