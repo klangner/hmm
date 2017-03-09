@@ -9,7 +9,7 @@ If you think that this library can help you, then let me know. We can discuss fu
 
 ## Features
    
-  * [ ] Viterbi MAP estimation
+  * [x] Viterbi MAP estimation
 
   
 # License
