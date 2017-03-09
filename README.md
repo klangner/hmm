@@ -24,9 +24,12 @@ We also know that after each toss we can switch coin with the probability of
 
 First time we select coin with probability of 1/2
 
-Question: If we now get observation of H H T T T which coins were used during each toss?
+Using this library we can answer the following question:
+ 
+Given the observation 'H H T T T' which coins were used during each toss?
 
-Lest build HMM model for this example and check the answer:
+
+Lest build HMM model and check the answer:
 
 
 ```rust
