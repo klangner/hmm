@@ -1,5 +1,30 @@
 //! # Hidden Markov Model
 //!
+//! ## Example
+//!
+//! Lets say that we have 2 coins:
+//!   * Fair which generates H (Head) and T (Tails) with probability of 1/2
+//!   * Biased - with probabilities H: 1/4, T: 3/4
+//!
+//! We also know that after each toss we can switch coin with the probability of
+//!   * Use the same coin: 3/4
+//!   * Switch coin: 1/4
+//!
+//! First time we select coin with probability of 1/2
+//!
+//! Question: If we now get observation of H H T T T which coins were used during each toss?
+//!
+//! Lest build HMM model for this example and check the answer:
+//!
+//! ```rust
+//! let initials: Vec<f64> = vec![0.5, 0.5];
+//! let st = vec![0.75, 0.25, 0.25, 0.75];
+//! let obs = vec![0.5, 0.5, 0.25, 0.75];
+//! let hmm = HiddenMarkov::from_vec(initials, st, obs).unwrap();
+//! hmm.map_estimate(vec![0, 0, 1, 1, 1]) == vec![0, 0, 1, 1, 1]
+//! ```
+//!
+
 // Implementation details
 // for numerical stability this library operates on log values and uses addition
 // instead of multiplication.  And since we are interested in probabilities in range [0, 1]
@@ -16,8 +41,6 @@ type StateId = usize;
 /// The states are identified by ids taken from natural numbers.
 // The values in this structure are converted to the log.
 pub struct HiddenMarkov {
-    // Number of states
-    state_count: usize,
     // Number of labels (different observation types)
     labels_count: usize,
     // Probability of starting states. Row Id == state id
@@ -38,8 +61,12 @@ impl HiddenMarkov {
     ///
     /// Params:
     ///   - initials - Initial probability for each state
-    ///   - transition - Probability of changing state from x1 to x2 (x1 x x2)
+    ///   - transition - Probability of changing state from x_1 to x_2 (state x state)
     ///   - observation_matrix - Probability of generating outcome in each state (state x outcome)
+    ///
+    /// Observation Vec should:
+    ///   * Have at least 1 observation
+    ///   * Each LabelId should be less then maximum number of observation in HMM model
     pub fn new(initials: Vec<f64>, transitions: Vec<Vec<f64>>,
                observation_model: Vec<Vec<f64>>) -> Option<HiddenMarkov>
     {
@@ -67,7 +94,6 @@ impl HiddenMarkov {
 
         Some(
             HiddenMarkov {
-                state_count: num_states,
                 labels_count: num_outcomes,
                 init_states: is_log,
                 state_transitions: trans_log,
@@ -77,38 +103,9 @@ impl HiddenMarkov {
 
     }
 
-    pub fn num_states(&self) -> usize { self.state_count}
-
-    pub fn num_labels(&self) -> usize { self.labels_count }
-
-
     /// Calculate MAP (Maximum a posteriori) using Viterbi algorithm
     /// As a input provide list of observations and as a output this function will provide
     /// The most probable sequence of states which generates such observations
-    /// ## Example
-    /// Lets say that we have 2 coins:
-    ///   * Fair which generates H (Head) and T (Tails) with probability of 1/2
-    ///   * Biased - with probabilities H: 1/4, T: 3/4
-    ///
-    /// We also know that after each toss we can switch coin with the probability of
-    ///   * Use the same coin: 3/4
-    ///   * Switch coin: 1/4
-    ///
-    /// First time we select coin with probability of 1/2
-    ///
-    /// Question: If we now get observation of H H T T T which coins were used during each toss?
-    ///
-    /// Lest build HMM model for this example and check the answer:
-    ///
-    /// let initials: Vec<f64> = vec![0.5, 0.5];
-    /// let st = vec![0.75, 0.25, 0.25, 0.75];
-    /// let obs = vec![0.5, 0.5, 0.25, 0.75];
-    /// let hmm = HiddenMarkov::from_vec(initials, st, obs).unwrap();
-    /// hmm.map_estimate(vec![0, 0, 1, 1, 1]) == vec![0, 0, 1, 1, 1]
-    ///
-    /// Observation Vec should:
-    ///   * Have at least 1 observation
-    ///   * Each LabelId should be less then maximum number of observation in HMM model
     pub fn map_estimate(&self, observations: Vec<LabelId>) -> Vec<StateId> {
         // Validate input
         let obs_len = observations.len();
