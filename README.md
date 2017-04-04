@@ -39,11 +39,21 @@ use hmm::models::{HiddenMarkov};
 
 
 fn main() {
+    // 50%:50% chance to start at either coin
     let initials = vec![0.5, 0.5];
+
+    // state transitions between coins:
+    //   3/4 to stay on same coin (on matrix diagonals)
+    //   1/4 chance to switch
     let st = vec![ vec![0.75, 0.25],
                    vec![0.25, 0.75]];
+
+    // observation probabilities for each coin:
+    //    first coin is fair, second one is biased
     let obs = vec![ vec![0.5, 0.5],
                     vec![0.25, 0.75]];
+
+    // generate the HMM model
     let hmm = HiddenMarkov::new(initials, st, obs).unwrap();
     let coins = hmm.map_estimate(vec![0, 0, 1, 1, 1]);
     println!("Coins used: {:?}", coins);
